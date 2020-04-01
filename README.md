@@ -1,6 +1,6 @@
 # Guide
 
-## Fast solution for Ubuntu
+## Fast installation for Ubuntu
 ```bash
 sudo apt-get install javacc
 ```
