@@ -15,22 +15,34 @@ PARSER_END(Fact)
 TOKEN : { < NUMBER : (["1"-"9"](["0"-"9"])+) | ["0"-"9"] > }
 TOKEN : { < #ALPHABET : ["a"-"z"] >}
 TOKEN : { < DOT : "." > }
-TOKEN : { < #TERMIDENTIFIER : (<ALPHABET> (["0"-"9","a"-"z"])*) >}
+TOKEN : { < TERMIDENTIFIER : (["a"-"z"](["0"-"9","a"-"z","A"-"Z"])*) >}
 TOKEN : { < OPEN_PAR : "(" > }
 TOKEN : { < CLOSE_PAR : ")" > }
-TOKEN : {<ATOM : <TERMIDENTIFIER> >}
-TOKEN : { <EOL : "\n"|"\r" >}
+//TOKEN : { <EOL : "\n"|"\r" >}
 TOKEN : { <COMA : ",">}
-
+<*> SKIP: {
+  < " " | "\t" | "\r" | "\n" | "\r\n" >
+}
+  
 void start(PrintStream printStream) :
-{}
+{
+    String clause;
+}
 {
     (
-         term = Fact()
-         <EOL>
-        {printStream.println(term);}
+        clause = Clause()
+        { printStream.println(clause); }
     )*
     <EOF>
+}
+
+String Clause():
+{
+    String fact;
+}
+{
+    fact = Fact()
+    { return fact; }
 }
 
 String Fact() :
@@ -38,65 +50,68 @@ String Fact() :
     String fact= "";
 }
 {
-     (
-        fact = CompoundTerm()
-        <DOT>
-     )*
-
-    {return fact;}
+    fact = CompoundTerm()
+    <DOT>
+    {return fact + ".";}
 }
 
 String CompoundTerm() :
 {
-  String termIdentifier = "";
-  String termList = "";
+    Token identifier;
+    String termList;
 }
 {
-    (
-        termIdentifier = Atom()
-        <OPEN_PAR>
-        termList = TermList()
-    )*
-    {return termIdentifier.concat(termList);}
+    identifier = <TERMIDENTIFIER>
+    <OPEN_PAR>
+    termList = TermList()
+    <CLOSE_PAR>
+    { return identifier.image + "(" + termList + ")"; }
 }
 
 String TermList() :
 {
-    String list = "";
-    String list3 = "";
+    String list;
+    String nextTerm;
 }
 {
-      list = Term()
-      (
-        <CLOSE_PAR>
-        {return list;}
-      |
+    list = Term()
+    (
         <COMA>
-         {return list.concat((TermList()));}
-      )*
-      {return list;}
+        nextTerm = Term()
+        { list += ", " + nextTerm; }
+    )*
+    { return list; }
 }
 
 String Term() :
 {
- String value;
+    String value;
 }
 {
-        value = Atom()
-        {return value;}
-        |
-        value = Number()
-        {return value;}
+    value = AtomOrCompound()
+    { return value; }
+    |
+    value = Number()
+    { return value; } 
 }
 
-String Atom() :
+String AtomOrCompound() :
 {
- Token t;
+    Token identifier;
+    String termList;
 }
 {
- t = <ATOM>
- {return t.image;}
+    identifier = <TERMIDENTIFIER>
+    (
+        <OPEN_PAR>
+        termList = TermList()
+        <CLOSE_PAR>
+        { return identifier.image + "(" + termList + ")"; }
+    |
+        { return identifier.image; }
+    )
 }
+
 String Number() :
 {
     Token t;
