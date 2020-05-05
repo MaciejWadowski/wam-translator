@@ -2,7 +2,7 @@
 % file    : test.pl
 
 
-file_name('/mnt/nvme/Programming/tkk/test.pl').
+file_name('/mnt/nvme/Programming/tkk/wam-translator/test.pl').
 
 
 predicate(user:man/1,1,static,private,monofile,global,[
@@ -91,4 +91,12 @@ label(10),
 label(11),
     get_atom(wojtek,0),
     get_atom(agnieszka,1),
+    proceed]).
+
+
+predicate(user:owner/2,9,static,private,monofile,global,[
+    get_atom(jacek,0),
+    get_structure(hamster/2,1),
+    unify_atom(small),
+    unify_atom(grey),
     proceed]).
