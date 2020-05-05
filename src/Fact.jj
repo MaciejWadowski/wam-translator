@@ -1,0 +1,107 @@
+options{
+    STATIC = false;
+}
+PARSER_BEGIN(Fact)
+    import java.io.PrintStream;
+
+    class Fact {
+        private String term = "";
+        public static void main(String[] args) throws ParseException, TokenMgrError {
+            Fact parser = new Fact(System.in);
+            parser.start(System.out);
+        }
+    }
+PARSER_END(Fact)
+TOKEN : { < NUMBER : (["1"-"9"](["0"-"9"])+) | ["0"-"9"] > }
+TOKEN : { < #ALPHABET : ["a"-"z"] >}
+TOKEN : { < DOT : "." > }
+TOKEN : { < #TERMIDENTIFIER : (<ALPHABET> (["0"-"9","a"-"z"])*) >}
+TOKEN : { < OPEN_PAR : "(" > }
+TOKEN : { < CLOSE_PAR : ")" > }
+TOKEN : {<ATOM : <TERMIDENTIFIER> >}
+TOKEN : { <EOL : "\n"|"\r" >}
+TOKEN : { <COMA : ",">}
+
+void start(PrintStream printStream) :
+{}
+{
+    (
+         term = Fact()
+         <EOL>
+        {printStream.println(term);}
+    )*
+    <EOF>
+}
+
+String Fact() :
+{
+    String fact= "";
+}
+{
+     (
+        fact = CompoundTerm()
+        <DOT>
+     )*
+
+    {return fact;}
+}
+
+String CompoundTerm() :
+{
+  String termIdentifier = "";
+  String termList = "";
+}
+{
+    (
+        termIdentifier = Atom()
+        <OPEN_PAR>
+        termList = TermList()
+    )*
+    {return termIdentifier.concat(termList);}
+}
+
+String TermList() :
+{
+    String list = "";
+    String list3 = "";
+}
+{
+      list = Term()
+      (
+        <CLOSE_PAR>
+        {return list;}
+      |
+        <COMA>
+         {return list.concat((TermList()));}
+      )*
+      {return list;}
+}
+
+String Term() :
+{
+ String value;
+}
+{
+        value = Atom()
+        {return value;}
+        |
+        value = Number()
+        {return value;}
+}
+
+String Atom() :
+{
+ Token t;
+}
+{
+ t = <ATOM>
+ {return t.image;}
+}
+String Number() :
+{
+    Token t;
+}
+{
+    t = <NUMBER>
+    {return t.image;}
+}
