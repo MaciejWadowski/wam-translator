@@ -1,0 +1,413 @@
+options{
+    STATIC = false;
+}
+PARSER_BEGIN(Prolog)
+
+import java.util.ArrayList;
+import java.io.PrintStream;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Collections;
+
+class Prolog {
+    private ArrayList<PrologPredicate> predicates = new ArrayList<PrologPredicate>();
+    public int predInstanceCount = 1;
+
+    public static void main(String[] args) throws ParseException, TokenMgrError {
+        Prolog parser = new Prolog(System.in);
+        parser.start(System.out);
+    }
+
+    public String generate() {
+        StringBuilder sb = new StringBuilder();
+        for (PrologPredicate p : predicates) {
+            sb.append(p.generate(this));
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    public void addInstance(PrologPredicate predicate) {
+        if (!predicates.isEmpty()) {
+            PrologPredicate lastPredicate = predicates.get(predicates.size() - 1);
+            if (!lastPredicate.getName().equals(predicate.getName()) || lastPredicate.getArity() != predicate.getArity()) {
+                for (PrologPredicate p : predicates) {
+                    if (p.getName().equals(predicate.getName()) && p.getArity() == predicate.getArity()) {
+                        System.out.println("Discontiguous predicate " + predicate.getName() + "/" + predicate.getArity());
+                        return;
+                    }
+                }
+            } else {
+                lastPredicate.merge(predicate);
+                return;
+            }
+        }
+        predicates.add(predicate);
+    }
+}
+
+// Reprezentuje zajętość rejestrów
+// WAM daje argumenty predykatu oraz elementy rozpakowywanych struktur do kolejnych niezajętych rejestrów od 0
+// Ta klasa pozwala zapamiętywać które z nich są obecnie dostępne
+class Registers {
+    private Set<Integer> occupied = new HashSet<Integer>();
+
+    void reserveFirstN(int n) {
+        for (int i = 0; i < n; ++i) {
+            occupied.add(i);
+        }
+    }
+
+    void free(int i) {
+        occupied.remove(i);
+    }
+
+    ArrayList<Integer> reserveTemporaryVariables(int n) {
+        ArrayList<Integer> ret = new ArrayList<Integer>();
+        if (n == 0) {
+            return ret;
+        }
+        int i = 0;
+        while (true) {
+            if (!occupied.contains(i)) {
+                occupied.add(i);
+                ret.add(i);
+            }
+            i++;
+            if (ret.size() == n) {
+                break;
+            }
+        }
+        Collections.reverse(ret);
+        return ret;
+    }
+}
+
+class PrologPredicate {
+    private String name;
+    private int arity;
+    private ArrayList<PredicateInstance> instances = new ArrayList<PredicateInstance>();
+
+    PrologPredicate(String name, int arity) {
+        this.name = name;
+        this.arity = arity;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getArity() {
+        return arity;
+    }
+
+    public void addInstance(PredicateInstance instance) {
+        instances.add(instance);
+    }
+
+    public void merge(PrologPredicate other) {
+        instances.addAll(other.instances);
+    }
+
+    public String generate(Prolog program) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("predicate(user:").append(name).append("/").append(arity).append(",").append(program.predInstanceCount);
+        program.predInstanceCount += instances.size();
+        sb.append(",static,private,monofile,global,[\n");
+        int label = 0;
+        for (int i = 0; i < instances.size(); ++i) {
+            if (instances.size() > 1) {
+                if (i == 0) {
+                    sb.append("    try_me_else(").append(label + 2).append("),\n");
+                } else if (i == instances.size() - 1) {
+                    sb.append("label(").append(label).append("),\n    trust_me_else_fail,\n");
+                } else {
+                    sb.append("label(").append(label).append("),\n    retry_me_else(").append(label + 2).append("),\n");
+                }
+                label++;
+                sb.append("label(").append(label).append("),\n");
+            }
+            sb.append(instances.get(i).generate()).append("    proceed");
+            if (i == instances.size() - 1) {
+                sb.append("]).\n");
+            } else {
+                sb.append(",\n");
+            }
+            label++;
+        }
+        return sb.toString();
+    }
+}
+
+interface PredicateInstance {
+    String generate();
+}
+
+class FactArgumentList implements PredicateInstance {
+    private ArrayList<Argument> arguments;
+
+    FactArgumentList(ArrayList<Argument> arguments) {
+        this.arguments = arguments;
+    }
+
+    public int getArity() {
+        return arguments.size();
+    }
+
+    public String generate() {
+        StringBuilder sb = new StringBuilder();
+        int index = 0;
+        Registers registers = new Registers();
+        registers.reserveFirstN(arguments.size());
+        for (Argument arg : arguments) {
+            registers.free(index);
+            sb.append(arg.generateForPredicate(index, registers));
+            index++;
+        }
+        return sb.toString();
+    }
+}
+
+abstract class Argument {
+
+    abstract String generateForStructure(int index);
+    abstract String generateForPredicate(int index, Registers registers);
+    String generateTemporaryVariable(int index, Registers registers) {
+        return "";
+    }
+    boolean needsTemporaryVariable() {
+        return false;
+    };
+}
+
+abstract class TemporaryVariableArgument extends Argument {
+
+    String generateForStructure(int index) {
+        return "    unify_variable(x(" + index + "))\n";
+    }
+
+    String generateForPredicate(int index, Registers registers) {
+        return generateTemporaryVariable(index, registers);
+    }
+
+    boolean needsTemporaryVariable() {
+        return true;
+    };
+}
+
+class Atom extends Argument {
+    private String name;
+
+    Atom(String name) {
+        this.name = name;
+    }
+
+    public String generateForStructure(int index) {
+        return "    unify_atom(" + name + ")\n";
+    }
+
+    public String generateForPredicate(int index, Registers registers) {
+        return "    get_atom(" + name + "," + index + "),\n";
+    }
+
+}
+
+class IntegerArgument extends Argument {
+    private String value;
+
+    IntegerArgument(String value) {
+        this.value = value;
+    }
+
+    public String generateForStructure(int index) {
+        return "    unify_integer(" + value + ")\n";
+    }
+
+    public String generateForPredicate(int index, Registers registers) {
+        return "    get_integer(" + value + "," + index + "),\n";
+    }
+}
+
+class FloatArgument extends TemporaryVariableArgument {
+    private String value;
+
+    FloatArgument(String value) {
+        this.value = value;
+    }
+
+    public String generateTemporaryVariable(int index, Registers registers) {
+        return "    get_float(" + value + "," + index + "),\n";
+    }
+}
+
+class Structure extends TemporaryVariableArgument {
+    private String name;
+    private ArrayList<Argument> arguments = new ArrayList<Argument>();
+
+    Structure(String name, ArrayList<Argument> arguments) {
+        this.name = name;
+        this.arguments = arguments;
+    }
+
+    public String generateTemporaryVariable(int index, Registers registers) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("    get_structure(").append(name).append("/").append(arguments.size()).append(",").append(index).append("),\n");
+        int numTempVariables = 0;
+        for (Argument arg : arguments) {
+            if (arg.needsTemporaryVariable()) {
+                numTempVariables++;
+            }
+        }
+        ArrayList<Integer> tempIndices = registers.reserveTemporaryVariables(numTempVariables);
+        tempIndices.add(0);
+        int currentTempIndex = 0;
+        for (Argument arg : arguments) {
+            sb.append(arg.generateForStructure(tempIndices.get(currentTempIndex)));
+            if (arg.needsTemporaryVariable()) {
+                currentTempIndex++;
+            }
+        }
+        currentTempIndex = 0;
+        for (Argument arg : arguments) {
+            int i = tempIndices.get(currentTempIndex);
+            registers.free(i);
+            if (arg.needsTemporaryVariable()) {
+                sb.append(arg.generateTemporaryVariable(i, registers));
+                currentTempIndex++;
+            }
+        }
+        return sb.toString();
+    }
+}
+
+PARSER_END(Prolog)
+TOKEN : { < INTEGER : (["1"-"9"](["0"-"9"])+) | ["0"-"9"] > }
+TOKEN : { < FLOAT : (<INTEGER>)? "." (["0"-"9"])+ ("e" <INTEGER>)? > }
+TOKEN : { < #ALPHABET : ["a"-"z"] >}
+TOKEN : { < DOT : "." > }
+TOKEN : { < TERMIDENTIFIER : (["a"-"z"](["0"-"9","a"-"z","A"-"Z"])*) >}
+TOKEN : { < OPEN_PAR : "(" > }
+TOKEN : { < CLOSE_PAR : ")" > }
+//TOKEN : { <EOL : "\n"|"\r" >}
+TOKEN : { <COMA : ",">}
+<*> SKIP: {
+  < " " | "\t" | "\r" | "\n" | "\r\n" >
+}
+  
+void start(PrintStream printStream) :
+{
+    PrologPredicate clause;
+}
+{
+    (
+        clause = Clause()
+        { addInstance(clause); }
+    )*
+    <EOF>
+    {
+        printStream.print(generate());
+    }
+}
+
+PrologPredicate Clause():
+{
+    PrologPredicate c;
+}
+{
+    c = Fact()
+    { return c; }
+}
+
+PrologPredicate Fact() :
+{
+    PrologPredicate fact;
+}
+{
+    fact = CompoundTermFact()
+    <DOT>
+    { return fact; }
+}
+
+PrologPredicate CompoundTermFact() :
+{
+    Token identifier;
+    ArrayList<Argument> arguments;
+}
+{
+    identifier = <TERMIDENTIFIER>
+    <OPEN_PAR>
+    arguments = ArgumentList()
+    <CLOSE_PAR>
+    {
+        PrologPredicate p = new PrologPredicate(identifier.image, arguments.size());
+        p.addInstance(new FactArgumentList(arguments));
+        return p;
+    }
+}
+
+ArrayList<Argument> ArgumentList() :
+{
+    Argument argument;
+    ArrayList<Argument> argumentList = new ArrayList<Argument>();
+}
+{
+    argument = Argument()
+    { argumentList.add(argument); }
+    (
+        <COMA>
+        argument = Argument()
+        { argumentList.add(argument); }
+    )*
+    { return argumentList; }
+}
+
+Argument Argument() :
+{
+    Argument argument;
+}
+{
+    argument = AtomOrCompoundArgument()
+    { return argument; }
+    |
+    argument = IntegerToken()
+    { return argument; }
+    |
+    argument = FloatToken()
+    { return argument; }
+}
+
+Argument AtomOrCompoundArgument() :
+{
+    Token identifier;
+    ArrayList<Argument> arguments;
+}
+{
+    identifier = <TERMIDENTIFIER>
+    (
+        <OPEN_PAR>
+        arguments = ArgumentList()
+        <CLOSE_PAR>
+        { return new Structure(identifier.image, arguments); }
+    |
+        { return new Atom(identifier.image); }
+    )
+}
+
+Argument IntegerToken() :
+{
+    Token t;
+}
+{
+    t = <INTEGER>
+    { return new IntegerArgument(t.image); }
+}
+
+
+Argument FloatToken() :
+{
+    Token t;
+}
+{
+    t = <FLOAT>
+    { return new FloatArgument(t.image); }
+}

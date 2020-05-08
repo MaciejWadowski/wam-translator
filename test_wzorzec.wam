@@ -1,0 +1,270 @@
+% compiler: GNU Prolog 1.4.5
+% file    : test.pl
+
+
+file_name('/mnt/nvme/Programming/tkk/wam-translator/test.pl').
+
+
+predicate(user:pred1/1,1,static,private,monofile,global,[
+    get_atom(opt1,0),
+    proceed]).
+
+
+predicate(user:pred2/1,2,static,private,monofile,global,[
+    switch_on_term(2,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(opt1,3),(opt2,5)]),
+
+label(2),
+    try_me_else(4),
+
+label(3),
+    get_atom(opt1,0),
+    proceed,
+
+label(4),
+    trust_me_else_fail,
+
+label(5),
+    get_atom(opt2,0),
+    proceed]).
+
+
+predicate(user:pred3/1,4,static,private,monofile,global,[
+    switch_on_term(2,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(opt1,3),(opt2,5),(opt3,7)]),
+
+label(2),
+    try_me_else(4),
+
+label(3),
+    get_atom(opt1,0),
+    proceed,
+
+label(4),
+    retry_me_else(6),
+
+label(5),
+    get_atom(opt2,0),
+    proceed,
+
+label(6),
+    trust_me_else_fail,
+
+label(7),
+    get_atom(opt3,0),
+    proceed]).
+
+
+predicate(user:pred4/1,7,static,private,monofile,global,[
+    try_me_else(5),
+    switch_on_term(1,2,4,fail,fail),
+
+label(1),
+    try_me_else(3),
+
+label(2),
+    get_atom(opt1,0),
+    proceed,
+
+label(3),
+    trust_me_else_fail,
+
+label(4),
+    get_integer(2,0),
+    proceed,
+
+label(5),
+    retry_me_else(6),
+    get_float(2.2000000000000002,0),
+    proceed,
+
+label(6),
+    retry_me_else(7),
+    get_float(320.0,0),
+    proceed,
+
+label(7),
+    trust_me_else_fail,
+    get_structure(hamster/2,0),
+    unify_atom(small),
+    unify_atom(grey),
+    proceed]).
+
+
+predicate(user:man/1,12,static,private,monofile,global,[
+    switch_on_term(2,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(jacek,3),(wojtek,5)]),
+
+label(2),
+    try_me_else(4),
+
+label(3),
+    get_atom(jacek,0),
+    proceed,
+
+label(4),
+    trust_me_else_fail,
+
+label(5),
+    get_atom(wojtek,0),
+    proceed]).
+
+
+predicate(user:woman/1,14,static,private,monofile,global,[
+    switch_on_term(2,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(agata,3),(agnieszka,5)]),
+
+label(2),
+    try_me_else(4),
+
+label(3),
+    get_atom(agata,0),
+    proceed,
+
+label(4),
+    trust_me_else_fail,
+
+label(5),
+    get_atom(agnieszka,0),
+    proceed]).
+
+
+predicate(user:parent/2,16,static,private,monofile,global,[
+    switch_on_term(4,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(agata,2),(wojtek,3)]),
+
+label(2),
+    try(5),
+    trust(9),
+
+label(3),
+    try(7),
+    trust(11),
+
+label(4),
+    try_me_else(6),
+
+label(5),
+    get_atom(agata,0),
+    get_atom(jacek,1),
+    proceed,
+
+label(6),
+    retry_me_else(8),
+
+label(7),
+    get_atom(wojtek,0),
+    get_atom(jacek,1),
+    proceed,
+
+label(8),
+    retry_me_else(10),
+
+label(9),
+    get_atom(agata,0),
+    get_atom(agnieszka,1),
+    proceed,
+
+label(10),
+    trust_me_else_fail,
+
+label(11),
+    get_atom(wojtek,0),
+    get_atom(agnieszka,1),
+    proceed]).
+
+
+predicate(user:owner/2,20,static,private,monofile,global,[
+    get_atom(jacek,0),
+    get_structure(hamster/2,1),
+    unify_atom(small),
+    unify_atom(grey),
+    proceed]).
+
+
+predicate(user:owner/3,21,static,private,monofile,global,[
+    switch_on_term(2,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(jacek,3),(agnieszka,5)]),
+
+label(2),
+    try_me_else(4),
+
+label(3),
+    get_atom(jacek,0),
+    get_structure(hamster/2,1),
+    unify_atom(small),
+    unify_atom(grey),
+    get_structure(dog/2,2),
+    unify_atom(big),
+    unify_atom(white),
+    proceed,
+
+label(4),
+    trust_me_else_fail,
+
+label(5),
+    get_atom(agnieszka,0),
+    get_structure(hamster/2,1),
+    unify_atom(small),
+    unify_atom(grey),
+    get_structure(dog/2,2),
+    unify_atom(big),
+    unify_atom(white),
+    proceed]).
+
+
+predicate(user:test/3,23,static,private,monofile,global,[
+    get_structure(n1/4,0),
+    unify_variable(x(4)),
+    unify_variable(x(3)),
+    unify_variable(x(0)),
+    unify_integer(2),
+    get_float(2.2999999999999998,4),
+    get_float(2.3999999999999999,3),
+    get_float(2.5,0),
+    get_structure(n1/3,1),
+    unify_atom(at1),
+    unify_variable(x(1)),
+    unify_variable(x(0)),
+    get_structure(n2/3,1),
+    unify_atom(at2),
+    unify_variable(x(1)),
+    unify_atom(at5),
+    get_structure(n3/2,1),
+    unify_atom(at3),
+    unify_atom(at4),
+    get_structure(n2/1,0),
+    unify_atom(at6),
+    get_structure(n1/2,2),
+    unify_atom(at1),
+    unify_variable(x(0)),
+    get_structure(n2/1,0),
+    unify_atom(at2),
+    proceed]).
+
+
+predicate(user:test2/4,24,static,private,monofile,global,[
+    get_atom(at0,0),
+    get_structure(n1/4,1),
+    unify_variable(x(4)),
+    unify_variable(x(1)),
+    unify_variable(x(0)),
+    unify_integer(2),
+    get_float(2.2999999999999998,4),
+    get_float(2.3999999999999999,1),
+    get_float(2.5,0),
+    get_atom(at2,2),
+    get_integer(4,3),
+    proceed]).
