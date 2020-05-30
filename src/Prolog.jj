@@ -20,6 +20,9 @@ class Prolog {
 
     public String generate() {
         StringBuilder sb = new StringBuilder();
+        sb.append("% compiler: GNU Prolog 1.4.5" +
+                   "% file    : test\n" +
+                   " file_name('../test.pl').\n\n");
         for (PrologPredicate p : predicates) {
             sb.append(p.generate(this));
             sb.append("\n");
@@ -29,18 +32,18 @@ class Prolog {
 
     public void addInstance(PrologPredicate predicate) {
         if (!predicates.isEmpty()) {
-            PrologPredicate lastPredicate = predicates.get(predicates.size() - 1);
-            if (!lastPredicate.getName().equals(predicate.getName()) || lastPredicate.getArity() != predicate.getArity()) {
-                for (PrologPredicate p : predicates) {
-                    if (p.getName().equals(predicate.getName()) && p.getArity() == predicate.getArity()) {
-                        System.out.println("Discontiguous predicate " + predicate.getName() + "/" + predicate.getArity());
-                        return;
+                PrologPredicate lastPredicate = predicates.get(predicates.size() - 1);
+                if (!lastPredicate.getName().equals(predicate.getName()) || lastPredicate.getArity() != predicate.getArity()) {
+                    for (PrologPredicate p : predicates) {
+                        if (p.getName().equals(predicate.getName()) && p.getArity() == predicate.getArity()) {
+                            System.out.println("Discontiguous predicate " + predicate.getName() + "/" + predicate.getArity());
+                            return;
+                        }
                     }
+                } else {
+                    lastPredicate.merge(predicate);
+                    return;
                 }
-            } else {
-                lastPredicate.merge(predicate);
-                return;
-            }
         }
         predicates.add(predicate);
     }
@@ -83,6 +86,125 @@ class Registers {
     }
 }
 
+class PrologRule implements PredicateInstance {
+    private String name;
+    private int arity;
+    private int literalsCount;
+    private ArrayList<RuleArgument> variables = new ArrayList<RuleArgument>();
+    private ArrayList<Literal> literals = new ArrayList<Literal>();
+
+    PrologRule(String name, ArrayList<RuleArgument> variables, ArrayList<Literal> literals) {
+        this.name = name;
+        this.variables = variables;
+        this.literals = literals;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getArity() {
+        return arity;
+    }
+    public String generate() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("    allocate(").append(variables.size()-1).append("),\n");
+        int index = 0;
+        Registers registers = new Registers();
+        registers.reserveFirstN(variables.size());
+        for (RuleArgument arg : variables) {
+            registers.free(index);
+            sb.append(arg.generateForPredicateRule(index, registers));
+            index++;
+        }
+
+        for(int i = 0; i < literals.size(); i++) {
+            for(int j = 0; j < literals.get(i).getArity(); j++) {
+              sb.append("    put_variable(x(SOMEREGISTERNUMBERINFUTURE),").append(j).append("),\n");
+            }
+            sb.append("    call(").append(literals.get(i).getName()).append( "/").append( literals.get(i).getArity()).append("),\n");
+            if (i == literals.size()-1) {
+                sb.append("    deallocate,\n");
+                sb.append("    execute(").append(literals.get(i).getName()).append("/").append(literals.get(i).getArity()).append(")");
+            }
+        }
+        return sb.toString();
+    }
+
+}
+
+interface VariableInstance {
+    String generate();
+}
+
+interface LiteralInstance {
+    String generate();
+}
+
+class RuleVariableList implements VariableInstance {
+    private ArrayList<RuleArgument> arguments;
+    RuleVariableList(ArrayList<RuleArgument> arguments) {
+        this.arguments = arguments;
+    }
+
+    public int getArity() {
+        return arguments.size();
+    }
+
+    public String generate() {
+        StringBuilder sb = new StringBuilder();
+        int index = 0;
+        Registers registers = new Registers();
+        registers.reserveFirstN(arguments.size());
+        for (RuleArgument arg : arguments) {
+            registers.free(index);
+            sb.append(arg.generateForPredicateRule(index, registers));
+            index++;
+        }
+        return sb.toString();
+    }
+}
+
+class LiteralList implements LiteralInstance {
+      private int arity;
+      private ArrayList<Literal> instances = new ArrayList<Literal>();
+
+      LiteralList(String name, int arity) {
+           this.arity = arity;
+      }
+
+      public int getArity() {
+          return arity;
+      }
+
+      public String generate() {
+          return "";
+      }
+}
+
+class Literal {
+    private String name;
+    private int arity;
+    private ArrayList<RuleVariableList> instances;
+
+    Literal(String name, int arity, ArrayList<RuleVariableList> instances) {
+        this.name = name;
+        this.instances = instances;
+        this.arity = arity;
+        this.instances = instances;
+    }
+
+    public int getArity() {
+        return arity;
+    }
+    public String getName() {
+        return name;
+    }
+    public String generate() {
+        return "";
+    }
+}
+
 class PrologPredicate {
     private String name;
     private int arity;
@@ -92,7 +214,22 @@ class PrologPredicate {
         this.name = name;
         this.arity = arity;
     }
-
+    public static ArrayList<Argument> convertToArgumentList(ArrayList<RuleArgument> ruleArguments, String name){
+        ArrayList<Argument> arguments = new ArrayList<Argument>(ruleArguments.size());
+        for(int i = 0; i < ruleArguments.size(); i++) {
+            if (ruleArguments.get(i) instanceof Argument) {
+                if (ruleArguments.get(i) instanceof Structure) {
+                    if (!((Structure)ruleArguments.get(i)).isArgumentStructure()) {
+                        return null;
+                    }
+                }
+                arguments.add((Argument) ruleArguments.get(i));
+            } else {
+                return null;
+            }
+        }
+        return arguments;
+    }
     public String getName() {
         return name;
     }
@@ -127,7 +264,10 @@ class PrologPredicate {
                 label++;
                 sb.append("label(").append(label).append("),\n");
             }
-            sb.append(instances.get(i).generate()).append("    proceed");
+            sb.append(instances.get(i).generate());
+            if (instances.get(i) instanceof FactArgumentList) {
+                sb.append("    proceed");
+            }
             if (i == instances.size() - 1) {
                 sb.append("]).\n");
             } else {
@@ -168,34 +308,74 @@ class FactArgumentList implements PredicateInstance {
     }
 }
 
-abstract class Argument {
-
-    abstract String generateForStructure(int index);
-    abstract String generateForPredicate(int index, Registers registers);
-    String generateTemporaryVariable(int index, Registers registers) {
-        return "";
-    }
-    boolean needsTemporaryVariable() {
-        return false;
-    };
+interface RuleArgument {
+        String generateForStructureRule(int index);
+        String generateForPredicateRule(int index, Registers registers);
+        String generateTemporaryVariableRule(int index, Registers registers);
+        boolean needsTemporaryVariableRule();
 }
 
-abstract class TemporaryVariableArgument extends Argument {
+interface Argument {
 
-    String generateForStructure(int index) {
-        return "    unify_variable(x(" + index + "))\n";
+    String generateForStructure(int index);
+    String generateForPredicate(int index, Registers registers);
+    String generateTemporaryVariable(int index, Registers registers);
+    boolean needsTemporaryVariable();
+}
+
+abstract class TemporaryVariableArgument implements Argument, RuleArgument {
+
+    public String generateForStructure(int index) {
+        return "    unify_variable(x(" + index + ")),\n";
     }
 
-    String generateForPredicate(int index, Registers registers) {
+    public String generateForPredicate(int index, Registers registers) {
         return generateTemporaryVariable(index, registers);
     }
 
-    boolean needsTemporaryVariable() {
+    public String generateTemporaryVariable(int index, Registers registers) {
+            return "";
+    }
+
+    public boolean needsTemporaryVariable() {
         return true;
-    };
+    }
+    public String generateForStructureRule(int index){
+        return generateForStructure(index);
+    }
+    public String generateForPredicateRule(int index, Registers registers) {
+        return generateForPredicate(index, registers);
+    }
+    public String generateTemporaryVariableRule(int index, Registers registers) {
+        return generateTemporaryVariable(index, registers);
+    }
+    public boolean needsTemporaryVariableRule() {
+        return needsTemporaryVariable();
+    }
 }
 
-class Atom extends Argument {
+class Variable implements RuleArgument {
+    private String name;
+
+    Variable(String name) {
+        this.name = name;
+    }
+
+    public String generateForStructureRule(int index) {
+        return "    unify_variable(";
+    }
+    public String generateForPredicateRule(int index, Registers registers) {
+        return "";
+    }
+    public String generateTemporaryVariableRule(int index, Registers registers) {
+        return "";
+    }
+    public boolean needsTemporaryVariableRule() {
+        return true;
+    }
+}
+
+class Atom implements Argument, RuleArgument {
     private String name;
 
     Atom(String name) {
@@ -203,16 +383,34 @@ class Atom extends Argument {
     }
 
     public String generateForStructure(int index) {
-        return "    unify_atom(" + name + ")\n";
+        return "    unify_atom(" + name + "),\n";
     }
 
     public String generateForPredicate(int index, Registers registers) {
         return "    get_atom(" + name + "," + index + "),\n";
     }
 
+    public String generateTemporaryVariable(int index, Registers registers) {
+        return "";
+    }
+    public boolean needsTemporaryVariable() {
+            return false;
+    }
+     public    String generateForStructureRule(int index){
+            return generateForStructure(index);
+        }
+      public   String generateForPredicateRule(int index, Registers registers) {
+            return generateForPredicate(index, registers);
+        }
+       public  String generateTemporaryVariableRule(int index, Registers registers) {
+            return generateTemporaryVariable(index, registers);
+        }
+      public   boolean needsTemporaryVariableRule() {
+            return needsTemporaryVariable();
+        }
 }
 
-class IntegerArgument extends Argument {
+class IntegerArgument implements Argument, RuleArgument {
     private String value;
 
     IntegerArgument(String value) {
@@ -220,12 +418,31 @@ class IntegerArgument extends Argument {
     }
 
     public String generateForStructure(int index) {
-        return "    unify_integer(" + value + ")\n";
+        return "    unify_integer(" + value + "),\n";
     }
 
     public String generateForPredicate(int index, Registers registers) {
         return "    get_integer(" + value + "," + index + "),\n";
     }
+    public boolean needsTemporaryVariable() {
+        return false;
+    }
+
+    public String generateTemporaryVariable(int index, Registers registers) {
+        return "";
+    }
+    public     String generateForStructureRule(int index){
+            return generateForStructure(index);
+        }
+    public     String generateForPredicateRule(int index, Registers registers) {
+            return generateForPredicate(index, registers);
+        }
+    public     String generateTemporaryVariableRule(int index, Registers registers) {
+            return generateTemporaryVariable(index, registers);
+        }
+     public    boolean needsTemporaryVariableRule() {
+            return needsTemporaryVariable();
+        }
 }
 
 class FloatArgument extends TemporaryVariableArgument {
@@ -238,13 +455,16 @@ class FloatArgument extends TemporaryVariableArgument {
     public String generateTemporaryVariable(int index, Registers registers) {
         return "    get_float(" + value + "," + index + "),\n";
     }
+    public boolean needsTemporaryVariable() {
+        return false;
+    }
 }
 
 class Structure extends TemporaryVariableArgument {
     private String name;
-    private ArrayList<Argument> arguments = new ArrayList<Argument>();
+    private ArrayList<RuleArgument> arguments = new ArrayList<RuleArgument>();
 
-    Structure(String name, ArrayList<Argument> arguments) {
+    Structure(String name, ArrayList<RuleArgument> arguments) {
         this.name = name;
         this.arguments = arguments;
     }
@@ -253,30 +473,58 @@ class Structure extends TemporaryVariableArgument {
         StringBuilder sb = new StringBuilder();
         sb.append("    get_structure(").append(name).append("/").append(arguments.size()).append(",").append(index).append("),\n");
         int numTempVariables = 0;
-        for (Argument arg : arguments) {
-            if (arg.needsTemporaryVariable()) {
+        for (RuleArgument arg : arguments) {
+            if (arg.needsTemporaryVariableRule()) {
                 numTempVariables++;
             }
         }
         ArrayList<Integer> tempIndices = registers.reserveTemporaryVariables(numTempVariables);
         tempIndices.add(0);
         int currentTempIndex = 0;
-        for (Argument arg : arguments) {
-            sb.append(arg.generateForStructure(tempIndices.get(currentTempIndex)));
-            if (arg.needsTemporaryVariable()) {
+        for (RuleArgument arg : arguments) {
+            sb.append(arg.generateForStructureRule(tempIndices.get(currentTempIndex)));
+            if (arg.needsTemporaryVariableRule()) {
                 currentTempIndex++;
             }
         }
         currentTempIndex = 0;
-        for (Argument arg : arguments) {
+        for (RuleArgument arg : arguments) {
             int i = tempIndices.get(currentTempIndex);
             registers.free(i);
-            if (arg.needsTemporaryVariable()) {
-                sb.append(arg.generateTemporaryVariable(i, registers));
+            if (arg.needsTemporaryVariableRule()) {
+                sb.append(arg.generateTemporaryVariableRule(i, registers));
                 currentTempIndex++;
             }
         }
         return sb.toString();
+    }
+
+    public boolean isArgumentStructure() {
+        for (RuleArgument arg: arguments) {
+            if (!(arg instanceof Argument)) {
+                return false;
+            } else {
+                if (arg instanceof Structure) {
+                    if (!((Structure )arg).isArgumentStructure()) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+}
+class VariableStructure extends TemporaryVariableArgument {
+    private String name;
+    private ArrayList<RuleArgument> arguments = new ArrayList<RuleArgument>();
+
+    VariableStructure(String name, ArrayList<RuleArgument> arguments) {
+        this.name = name;
+        this.arguments = arguments;
+    }
+
+    public String generateTemporaryVariable(int index, Registers registers) {
+        return "";
     }
 }
 
@@ -293,6 +541,8 @@ TOKEN : { <COMA : ",">}
 <*> SKIP: {
   < " " | "\t" | "\r" | "\n" | "\r\n" >
 }
+TOKEN : {<VARIABLE : (["A"-"Z"](["0"-"9","a"-"z","A"-"Z"])*)> }
+TOKEN : {<IMPLICATION: ":-" > }
   
 void start(PrintStream printStream) :
 {
@@ -312,80 +562,99 @@ void start(PrintStream printStream) :
 PrologPredicate Clause():
 {
     PrologPredicate c;
-}
-{
-    c = Fact()
-    { return c; }
-}
-
-PrologPredicate Fact() :
-{
-    PrologPredicate fact;
-}
-{
-    fact = CompoundTermFact()
-    <DOT>
-    { return fact; }
-}
-
-PrologPredicate CompoundTermFact() :
-{
     Token identifier;
-    ArrayList<Argument> arguments;
+    ArrayList<RuleArgument> arguments;
 }
 {
     identifier = <TERMIDENTIFIER>
     <OPEN_PAR>
-    arguments = ArgumentList()
+    arguments = RuleArgumentList()
     <CLOSE_PAR>
+    (
+        c = Fact(identifier, arguments)
+        { return c; }
+    |
+        c = Rule(identifier, arguments)
+        {return c;}
+    )
+}
+
+PrologPredicate Fact(Token identifier, ArrayList<RuleArgument> ruleArguments) :
+{
+
+}
+{
+    <DOT>
     {
-        PrologPredicate p = new PrologPredicate(identifier.image, arguments.size());
-        p.addInstance(new FactArgumentList(arguments));
-        return p;
+              ArrayList<Argument> arguments = PrologPredicate.convertToArgumentList(ruleArguments, identifier.image);
+              if (arguments == null) {
+                throw new ParseException("Fact " + identifier.image + " contains illegal uppercase fact");
+              }
+              PrologPredicate p = new PrologPredicate(identifier.image, arguments.size());
+              p.addInstance(new FactArgumentList(arguments));
+              return p;
     }
 }
 
-ArrayList<Argument> ArgumentList() :
+
+PrologPredicate Rule(Token identifier, ArrayList<RuleArgument> arguments) :
 {
-    Argument argument;
-    ArrayList<Argument> argumentList = new ArrayList<Argument>();
+    ArrayList<Literal> literals;
 }
 {
-    argument = Argument()
+        <IMPLICATION>
+        literals = LiteralList()
+        <DOT>
+        {
+            PrologPredicate p = new PrologPredicate(identifier.image, arguments.size());
+            p.addInstance(new PrologRule(identifier.image, arguments, literals));
+            return p;
+        }
+}
+
+ArrayList<RuleArgument> RuleArgumentList() :
+{
+    RuleArgument argument;
+    ArrayList<RuleArgument> argumentList = new ArrayList<RuleArgument>();
+}
+{
+    argument = RuleArgument()
     { argumentList.add(argument); }
     (
         <COMA>
-        argument = Argument()
+        argument = RuleArgument()
         { argumentList.add(argument); }
     )*
     { return argumentList; }
 }
 
-Argument Argument() :
+RuleArgument RuleArgument() :
 {
-    Argument argument;
+    RuleArgument argument;
 }
 {
-    argument = AtomOrCompoundArgument()
+    argument = AtomOrCompundArgument()
     { return argument; }
     |
-    argument = IntegerToken()
+    argument = IntegerRuleToken()
     { return argument; }
     |
-    argument = FloatToken()
+    argument = FloatRuleToken()
     { return argument; }
+    |
+    argument = Variable()
+    {return argument;}
 }
-
-Argument AtomOrCompoundArgument() :
+RuleArgument AtomOrCompundArgument() :
 {
     Token identifier;
-    ArrayList<Argument> arguments;
+    ArrayList<RuleArgument> arguments;
 }
 {
     identifier = <TERMIDENTIFIER>
     (
         <OPEN_PAR>
-        arguments = ArgumentList()
+        arguments = RuleArgumentList()
         <CLOSE_PAR>
         { return new Structure(identifier.image, arguments); }
     |
@@ -393,7 +662,7 @@ Argument AtomOrCompoundArgument() :
     )
 }
 
-Argument IntegerToken() :
+RuleArgument IntegerRuleToken() :
 {
     Token t;
 }
@@ -403,11 +672,53 @@ Argument IntegerToken() :
 }
 
 
-Argument FloatToken() :
+RuleArgument FloatRuleToken() :
 {
     Token t;
 }
 {
     t = <FLOAT>
     { return new FloatArgument(t.image); }
+}
+
+RuleArgument Variable() :
+{
+    Token t;
+}
+{
+    t = <VARIABLE>
+    { return new Variable(t.image); }
+}
+ArrayList<Literal> LiteralList() :
+{
+    Literal literal;
+    Literal newLiteral;
+    ArrayList<Literal> literalList = new ArrayList<Literal>();
+}
+{
+    literal = Literal()
+    { literalList.add(literal); }
+    (
+        <COMA>
+        newLiteral = Literal()
+        { literalList.add(newLiteral); }
+    )*
+    { return literalList; }
+}
+
+Literal Literal() :
+{
+    Token identifier;
+    ArrayList<RuleArgument> arguments;
+}
+{
+    identifier = <TERMIDENTIFIER>
+    <OPEN_PAR>
+    arguments = RuleArgumentList()
+    <CLOSE_PAR>
+    {
+        ArrayList<RuleVariableList> list = new ArrayList<RuleVariableList>();
+        list.add(new RuleVariableList(arguments));
+        return new Literal(identifier.image, arguments.size() ,list);
+     }
 }

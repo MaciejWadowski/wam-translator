@@ -1,5 +1,5 @@
 #!/bin/bash
 
-javacc src/Fact.jj
+javacc src/Prolog.jj
 javac *.java
-java Fact < test.pl
+java Prolog < test.pl

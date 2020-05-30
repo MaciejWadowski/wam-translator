@@ -2,15 +2,15 @@
 % file    : test.pl
 
 
-file_name('/mnt/nvme/Programming/tkk/wam-translator/test.pl').
+file_name('/home/maciej/Projects/wam-translator/test.pl').
 
 
-predicate(user:pred1/1,1,static,private,monofile,global,[
+predicate(pred1/1,1,static,private,monofile,global,[
     get_atom(opt1,0),
     proceed]).
 
 
-predicate(user:pred2/1,2,static,private,monofile,global,[
+predicate(pred2/1,2,static,private,monofile,global,[
     switch_on_term(2,1,fail,fail,fail),
 
 label(1),
@@ -31,7 +31,7 @@ label(5),
     proceed]).
 
 
-predicate(user:pred3/1,4,static,private,monofile,global,[
+predicate(pred3/1,4,static,private,monofile,global,[
     switch_on_term(2,1,fail,fail,fail),
 
 label(1),
@@ -59,7 +59,7 @@ label(7),
     proceed]).
 
 
-predicate(user:pred4/1,7,static,private,monofile,global,[
+predicate(pred4/1,7,static,private,monofile,global,[
     try_me_else(5),
     switch_on_term(1,2,4,fail,fail),
 
@@ -95,7 +95,7 @@ label(7),
     proceed]).
 
 
-predicate(user:man/1,12,static,private,monofile,global,[
+predicate(man/1,12,static,private,monofile,global,[
     switch_on_term(2,1,fail,fail,fail),
 
 label(1),
@@ -116,7 +116,7 @@ label(5),
     proceed]).
 
 
-predicate(user:woman/1,14,static,private,monofile,global,[
+predicate(woman/1,14,static,private,monofile,global,[
     switch_on_term(2,1,fail,fail,fail),
 
 label(1),
@@ -137,7 +137,7 @@ label(5),
     proceed]).
 
 
-predicate(user:parent/2,16,static,private,monofile,global,[
+predicate(parent/2,16,static,private,monofile,global,[
     switch_on_term(4,1,fail,fail,fail),
 
 label(1),
@@ -184,7 +184,7 @@ label(11),
     proceed]).
 
 
-predicate(user:owner/2,20,static,private,monofile,global,[
+predicate(owner/2,20,static,private,monofile,global,[
     get_atom(jacek,0),
     get_structure(hamster/2,1),
     unify_atom(small),
@@ -192,7 +192,7 @@ predicate(user:owner/2,20,static,private,monofile,global,[
     proceed]).
 
 
-predicate(user:owner/3,21,static,private,monofile,global,[
+predicate(owner/3,21,static,private,monofile,global,[
     switch_on_term(2,1,fail,fail,fail),
 
 label(1),
@@ -225,7 +225,7 @@ label(5),
     proceed]).
 
 
-predicate(user:test/3,23,static,private,monofile,global,[
+predicate(test/3,23,static,private,monofile,global,[
     get_structure(n1/4,0),
     unify_variable(x(4)),
     unify_variable(x(3)),
@@ -255,7 +255,7 @@ predicate(user:test/3,23,static,private,monofile,global,[
     proceed]).
 
 
-predicate(user:test2/4,24,static,private,monofile,global,[
+predicate(test2/4,24,static,private,monofile,global,[
     get_atom(at0,0),
     get_structure(n1/4,1),
     unify_variable(x(4)),
@@ -268,3 +268,273 @@ predicate(user:test2/4,24,static,private,monofile,global,[
     get_atom(at2,2),
     get_integer(4,3),
     proceed]).
+
+
+predicate(rodzic/2,27,static,private,monofile,global,[
+    switch_on_term(4,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(kasia,5),(tomek,2),(robert,3),(magda,15)]),
+
+label(2),
+    try(7),
+    trust(9),
+
+label(3),
+    try(11),
+    trust(13),
+
+label(4),
+    try_me_else(6),
+
+label(5),
+    get_atom(kasia,0),
+    get_atom(robert,1),
+    proceed,
+
+label(6),
+    retry_me_else(8),
+
+label(7),
+    get_atom(tomek,0),
+    get_atom(robert,1),
+    proceed,
+
+label(8),
+    retry_me_else(10),
+
+label(9),
+    get_atom(tomek,0),
+    get_atom(eliza,1),
+    proceed,
+
+label(10),
+    retry_me_else(12),
+
+label(11),
+    get_atom(robert,0),
+    get_atom(anna,1),
+    proceed,
+
+label(12),
+    retry_me_else(14),
+
+label(13),
+    get_atom(robert,0),
+    get_atom(magda,1),
+    proceed,
+
+label(14),
+    trust_me_else_fail,
+
+label(15),
+    get_atom(magda,0),
+    get_atom(jan,1),
+    proceed]).
+
+
+predicate(kobieta/1,34,static,private,monofile,global,[
+    switch_on_term(2,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(kasia,3),(eliza,5),(magda,7),(anna,9)]),
+
+label(2),
+    try_me_else(4),
+
+label(3),
+    get_atom(kasia,0),
+    proceed,
+
+label(4),
+    retry_me_else(6),
+
+label(5),
+    get_atom(eliza,0),
+    proceed,
+
+label(6),
+    retry_me_else(8),
+
+label(7),
+    get_atom(magda,0),
+    proceed,
+
+label(8),
+    trust_me_else_fail,
+
+label(9),
+    get_atom(anna,0),
+    proceed]).
+
+
+predicate(mezczyzna/1,39,static,private,monofile,global,[
+    switch_on_term(2,1,fail,fail,fail),
+
+label(1),
+    switch_on_atom([(tomek,3),(robert,5),(jan,7)]),
+
+label(2),
+    try_me_else(4),
+
+label(3),
+    get_atom(tomek,0),
+    proceed,
+
+label(4),
+    retry_me_else(6),
+
+label(5),
+    get_atom(robert,0),
+    proceed,
+
+label(6),
+    trust_me_else_fail,
+
+label(7),
+    get_atom(jan,0),
+    proceed]).
+
+
+predicate(matka/2,43,static,private,monofile,global,[
+    allocate(1),
+    get_structure(kobieta/1,0),
+    unify_variable(y(0)),
+    get_variable(x(2),1),
+    put_value(y(0),0),
+    put_value(x(2),1),
+    call(rodzic/2),
+    put_value(y(0),0),
+    deallocate,
+    execute(kobieta/1)]).
+
+
+predicate(ojciec/2,47,static,private,monofile,global,[
+    allocate(1),
+    get_variable(y(0),0),
+    get_variable(x(2),1),
+    put_value(y(0),0),
+    put_value(x(2),1),
+    call(rodzic/2),
+    put_value(y(0),0),
+    deallocate,
+    execute(mezczyzna/1)]).
+
+
+predicate(przodek/2,51,static,private,monofile,global,[
+    try_me_else(1),
+    get_atom(maciek,0),
+    get_atom(kamil,1),
+    proceed,
+
+label(1),
+    retry_me_else(2),
+    get_variable(x(3),0),
+    get_variable(x(2),1),
+    put_value(x(3),0),
+    put_value(x(2),1),
+    execute(rodzic/2),
+
+label(2),
+    trust_me_else_fail,
+    allocate(2),
+    get_variable(x(2),0),
+    get_variable(y(0),1),
+    put_value(x(2),0),
+    put_variable(y(1),1),
+    call(rodzic/2),
+    put_unsafe_value(y(1),0),
+    put_value(y(0),1),
+    deallocate,
+    execute(przodek/2)]).
+
+
+predicate(testfun/4,60,static,private,monofile,global,[
+    try_me_else(1),
+    get_atom(a,0),
+    get_atom(b,1),
+    get_atom(c,2),
+    get_atom(d,3),
+    proceed,
+
+label(1),
+    retry_me_else(2),
+    allocate(3),
+    get_variable(x(4),0),
+    get_variable(y(0),1),
+    get_variable(y(1),2),
+    get_variable(y(2),3),
+    put_value(x(4),0),
+    put_value(y(0),1),
+    call(rodzic/2),
+    put_value(y(1),0),
+    put_value(y(2),1),
+    call(przodek/2),
+    put_value(y(0),0),
+    put_value(y(1),1),
+    deallocate,
+    execute(przodek/2),
+
+label(2),
+    trust_me_else_fail,
+    switch_on_term(4,5,fail,fail,3),
+
+label(3),
+    switch_on_structure([(owner/2,7),(przodek/2,9)]),
+
+label(4),
+    try_me_else(6),
+
+label(5),
+    get_atom(a2,0),
+    get_atom(b3,1),
+    get_atom(c3,2),
+    get_atom(d3,3),
+    proceed,
+
+label(6),
+    retry_me_else(8),
+
+label(7),
+    allocate(2),
+    get_structure(owner/2,0),
+    unify_atom(jacek),
+    unify_variable(x(0)),
+    get_structure(hamster/2,0),
+    unify_atom(small),
+    unify_variable(x(5)),
+    get_structure(parent/2,1),
+    unify_atom(ania),
+    unify_variable(x(4)),
+    get_variable(y(0),2),
+    get_variable(y(1),3),
+    put_value(x(5),0),
+    put_value(x(4),1),
+    call(rodzic/2),
+    put_value(y(0),0),
+    call(mezczyzna/1),
+    put_value(y(1),0),
+    deallocate,
+    execute(kobieta/1),
+
+label(8),
+    trust_me_else_fail,
+
+label(9),
+    allocate(3),
+    get_structure(przodek/2,0),
+    unify_variable(x(5)),
+    unify_variable(y(0)),
+    get_variable(x(4),1),
+    get_variable(y(1),2),
+    get_variable(y(2),3),
+    put_value(x(5),0),
+    put_value(x(4),1),
+    call(rodzic/2),
+    put_value(y(1),0),
+    call(mezczyzna/1),
+    put_value(y(2),0),
+    call(kobieta/1),
+    put_value(y(0),0),
+    deallocate,
+    execute(kobieta/1)]).

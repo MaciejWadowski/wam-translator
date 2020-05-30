@@ -1,3 +1,6 @@
+% compiler: GNU Prolog 1.4.5% file    : test
+ file_name('../test.pl').
+
 predicate(user:pred1/1,1,static,private,monofile,global,[
     get_atom(opt1,0),
     proceed]).
@@ -53,8 +56,8 @@ label(8),
     trust_me_else_fail,
 label(9),
     get_structure(hamster/2,0),
-    unify_atom(small)
-    unify_atom(grey)
+    unify_atom(small),
+    unify_atom(grey),
     proceed]).
 
 predicate(user:man/1,12,static,private,monofile,global,[
@@ -107,8 +110,8 @@ label(7),
 predicate(user:owner/2,20,static,private,monofile,global,[
     get_atom(jacek,0),
     get_structure(hamster/2,1),
-    unify_atom(small)
-    unify_atom(grey)
+    unify_atom(small),
+    unify_atom(grey),
     proceed]).
 
 predicate(user:owner/3,21,static,private,monofile,global,[
@@ -116,64 +119,249 @@ predicate(user:owner/3,21,static,private,monofile,global,[
 label(1),
     get_atom(jacek,0),
     get_structure(hamster/2,1),
-    unify_atom(small)
-    unify_atom(grey)
+    unify_atom(small),
+    unify_atom(grey),
     get_structure(dog/2,2),
-    unify_atom(big)
-    unify_atom(white)
+    unify_atom(big),
+    unify_atom(white),
     proceed,
 label(2),
     trust_me_else_fail,
 label(3),
     get_atom(agnieszka,0),
     get_structure(hamster/2,1),
-    unify_atom(small)
-    unify_atom(grey)
+    unify_atom(small),
+    unify_atom(grey),
     get_structure(dog/2,2),
-    unify_atom(big)
-    unify_atom(white)
+    unify_atom(big),
+    unify_atom(white),
     proceed]).
 
 predicate(user:test/3,23,static,private,monofile,global,[
     get_structure(n1/4,0),
-    unify_variable(x(4))
-    unify_variable(x(3))
-    unify_variable(x(0))
-    unify_integer(2)
-    get_float(2.3,4),
-    get_float(2.4,3),
-    get_float(2.5,0),
+    unify_variable(x(0)),
+    unify_variable(x(0)),
+    unify_variable(x(0)),
+    unify_integer(2),
     get_structure(n1/3,1),
-    unify_atom(at1)
-    unify_variable(x(1))
-    unify_variable(x(0))
+    unify_atom(at1),
+    unify_variable(x(1)),
+    unify_variable(x(0)),
     get_structure(n2/3,1),
-    unify_atom(at2)
-    unify_variable(x(1))
-    unify_atom(at5)
+    unify_atom(at2),
+    unify_variable(x(1)),
+    unify_atom(at5),
     get_structure(n3/2,1),
-    unify_atom(at3)
-    unify_atom(at4)
+    unify_atom(at3),
+    unify_atom(at4),
     get_structure(n2/1,0),
-    unify_atom(at6)
+    unify_atom(at6),
     get_structure(n1/2,2),
-    unify_atom(at1)
-    unify_variable(x(0))
+    unify_atom(at1),
+    unify_variable(x(0)),
     get_structure(n2/1,0),
-    unify_atom(at2)
+    unify_atom(at2),
     proceed]).
 
 predicate(user:test2/4,24,static,private,monofile,global,[
     get_atom(at0,0),
     get_structure(n1/4,1),
-    unify_variable(x(4))
-    unify_variable(x(1))
-    unify_variable(x(0))
-    unify_integer(2)
-    get_float(2.3,4),
-    get_float(2.4,1),
-    get_float(2.5,0),
+    unify_variable(x(0)),
+    unify_variable(x(0)),
+    unify_variable(x(0)),
+    unify_integer(2),
     get_atom(at2,2),
     get_integer(4,3),
     proceed]).
+
+predicate(user:rodzic/2,25,static,private,monofile,global,[
+    try_me_else(2),
+label(1),
+    get_atom(kasia,0),
+    get_atom(robert,1),
+    proceed,
+label(2),
+    retry_me_else(4),
+label(3),
+    get_atom(tomek,0),
+    get_atom(robert,1),
+    proceed,
+label(4),
+    retry_me_else(6),
+label(5),
+    get_atom(tomek,0),
+    get_atom(eliza,1),
+    proceed,
+label(6),
+    retry_me_else(8),
+label(7),
+    get_atom(robert,0),
+    get_atom(anna,1),
+    proceed,
+label(8),
+    retry_me_else(10),
+label(9),
+    get_atom(robert,0),
+    get_atom(magda,1),
+    proceed,
+label(10),
+    trust_me_else_fail,
+label(11),
+    get_atom(magda,0),
+    get_atom(jan,1),
+    proceed]).
+
+predicate(user:kobieta/1,31,static,private,monofile,global,[
+    try_me_else(2),
+label(1),
+    get_atom(kasia,0),
+    proceed,
+label(2),
+    retry_me_else(4),
+label(3),
+    get_atom(eliza,0),
+    proceed,
+label(4),
+    retry_me_else(6),
+label(5),
+    get_atom(magda,0),
+    proceed,
+label(6),
+    trust_me_else_fail,
+label(7),
+    get_atom(anna,0),
+    proceed]).
+
+predicate(user:mezczyzna/1,35,static,private,monofile,global,[
+    try_me_else(2),
+label(1),
+    get_atom(tomek,0),
+    proceed,
+label(2),
+    retry_me_else(4),
+label(3),
+    get_atom(robert,0),
+    proceed,
+label(4),
+    trust_me_else_fail,
+label(5),
+    get_atom(jan,0),
+    proceed]).
+
+predicate(user:matka/2,38,static,private,monofile,global,[
+    allocate(1),
+    get_structure(kobieta/1,0),
+    unify_variable(    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(rodzic/2),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    call(kobieta/1),
+    deallocate,
+    execute(kobieta/1)]).
+
+predicate(user:ojciec/2,39,static,private,monofile,global,[
+    allocate(1),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(rodzic/2),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    call(mezczyzna/1),
+    deallocate,
+    execute(mezczyzna/1)]).
+
+predicate(user:przodek/2,40,static,private,monofile,global,[
+    try_me_else(2),
+label(1),
+    get_atom(maciek,0),
+    get_atom(kamil,1),
+    proceed,
+label(2),
+    retry_me_else(4),
+label(3),
+    allocate(1),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(rodzic/2),
+    deallocate,
+    execute(rodzic/2),
+label(4),
+    trust_me_else_fail,
+label(5),
+    allocate(1),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(rodzic/2),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(przodek/2),
+    deallocate,
+    execute(przodek/2)]).
+
+predicate(user:testfun/4,43,static,private,monofile,global,[
+    try_me_else(2),
+label(1),
+    get_atom(a,0),
+    get_atom(b,1),
+    get_atom(c,2),
+    get_atom(d,3),
+    proceed,
+label(2),
+    retry_me_else(4),
+label(3),
+    allocate(3),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(rodzic/2),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(przodek/2),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(przodek/2),
+    deallocate,
+    execute(przodek/2),
+label(4),
+    retry_me_else(6),
+label(5),
+    get_atom(a2,0),
+    get_atom(b3,1),
+    get_atom(c3,2),
+    get_atom(d3,3),
+    proceed,
+label(6),
+    retry_me_else(8),
+label(7),
+    allocate(3),
+    get_structure(owner/2,0),
+    unify_atom(jacek),
+    unify_variable(x(0)),
+    get_structure(hamster/2,0),
+    unify_atom(small),
+    unify_variable(    get_structure(parent/2,1),
+    unify_atom(ania),
+    unify_variable(    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(rodzic/2),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    call(mezczyzna/1),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    call(kobieta/1),
+    deallocate,
+    execute(kobieta/1),
+label(8),
+    trust_me_else_fail,
+label(9),
+    allocate(3),
+    get_structure(przodek/2,0),
+    unify_variable(    unify_variable(    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),1),
+    call(rodzic/2),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    call(mezczyzna/1),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    call(kobieta/1),
+    put_variable(x(SOMEREGISTERNUMBERINFUTURE),0),
+    call(kobieta/1),
+    deallocate,
+    execute(kobieta/1)]).
 
