@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Collections;
+import java.util.HashMap;
 
 class Prolog {
     private ArrayList<PrologPredicate> predicates = new ArrayList<PrologPredicate>();
@@ -86,6 +87,25 @@ class Registers {
     }
 }
 
+class MutableInteger {
+    int value;
+    public MutableInteger(int value) {
+        this.value = value;
+    }
+
+    int getValue() {
+        return value;
+    }
+
+    public void increment() {
+        value++;
+    }
+
+    public void decrement() {
+        value--;
+    }
+}
+
 class PrologRule implements PredicateInstance {
     private String name;
     private int arity;
@@ -107,25 +127,46 @@ class PrologRule implements PredicateInstance {
         return arity;
     }
     public String generate() {
+        HashMap<String, String> map = new HashMap<String, String>();
         StringBuilder sb = new StringBuilder();
         sb.append("    allocate(").append(variables.size()-1).append("),\n");
-        int index = 0;
-        Registers registers = new Registers();
-        registers.reserveFirstN(variables.size());
+        int variablesCount = 0;
         for (RuleArgument arg : variables) {
-            registers.free(index);
-            sb.append(arg.generateForPredicateRule(index, registers));
-            index++;
+            if (arg instanceof Variable) {
+                variablesCount++;
+            } else if (arg instanceof Structure) {
+                variablesCount = ((Structure) arg).getVariablesCount(variablesCount);
+            }
+        }
+        boolean first = true;
+        MutableInteger varYCount = new MutableInteger(0);
+        MutableInteger varXCount = new MutableInteger(1);
+        int count = 0;
+        for (RuleArgument arg : variables) {
+            if (arg instanceof Variable) {
+                if (first) {
+                    map.put(arg.getName(), "x(" + varXCount.getValue() + ")");
+                    sb.append("    get_variable(x(").append(varXCount.getValue()).append("),").append(count).append("),\n");
+                    varXCount.increment();
+                    first = false;
+                } else {
+                    map.put(arg.getName(), "y(" + varYCount.getValue() + ")");
+                    sb.append("    get_variable(y(").append(varYCount.getValue()).append("),").append(count).append("),\n");
+                    varYCount.increment();
+                }
+            } else if (arg instanceof Structure) {
+                ((Structure) arg).generateForRule(count, map,varXCount);
+            } else {
+                sb.append(arg.generateForPredicateRule(count, null));
+            }
+            count++;
         }
 
         for(int i = 0; i < literals.size(); i++) {
-            for(int j = 0; j < literals.get(i).getArity(); j++) {
-              sb.append("    put_variable(x(SOMEREGISTERNUMBERINFUTURE),").append(j).append("),\n");
-            }
-            sb.append("    call(").append(literals.get(i).getName()).append( "/").append( literals.get(i).getArity()).append("),\n");
             if (i == literals.size()-1) {
-                sb.append("    deallocate,\n");
-                sb.append("    execute(").append(literals.get(i).getName()).append("/").append(literals.get(i).getArity()).append(")");
+                sb.append(literals.get(i).generate(map, true));
+            } else {
+                sb.append(literals.get(i).generate(map, false));
             }
         }
         return sb.toString();
@@ -163,6 +204,9 @@ class RuleVariableList implements VariableInstance {
         }
         return sb.toString();
     }
+    public ArrayList<RuleArgument> getArguments() {
+        return arguments;
+    }
 }
 
 class LiteralList implements LiteralInstance {
@@ -185,7 +229,7 @@ class LiteralList implements LiteralInstance {
 class Literal {
     private String name;
     private int arity;
-    private ArrayList<RuleVariableList> instances;
+    private ArrayList<RuleVariableList> instances = new ArrayList<RuleVariableList>();
 
     Literal(String name, int arity, ArrayList<RuleVariableList> instances) {
         this.name = name;
@@ -203,6 +247,23 @@ class Literal {
     public String generate() {
         return "";
     }
+
+    public String generate(HashMap<String, String> map, boolean last) {
+        StringBuilder sb = new StringBuilder();
+         for(int j = 0; j < instances.size(); j++) {
+                for (int i = 0; i < instances.get(j).getArguments().size(); i++) {
+                sb.append("    put_variable(").append(map.get(instances.get(j).getArguments().get(i).getName())).append(",").append(i).append("),\n");
+             }
+         }
+         if (last) {
+             sb.append("    deallocate,\n");
+             sb.append("    execute(").append(getName()).append("/").append(getArity()).append(")\n");
+         } else {
+                 sb.append("    call(").append(getName()).append( "/").append(getArity()).append("),\n");
+         }
+         return sb.toString();
+    }
+
 }
 
 class PrologPredicate {
@@ -313,6 +374,7 @@ interface RuleArgument {
         String generateForPredicateRule(int index, Registers registers);
         String generateTemporaryVariableRule(int index, Registers registers);
         boolean needsTemporaryVariableRule();
+        String getName();
 }
 
 interface Argument {
@@ -352,10 +414,14 @@ abstract class TemporaryVariableArgument implements Argument, RuleArgument {
     public boolean needsTemporaryVariableRule() {
         return needsTemporaryVariable();
     }
+    public String getName() {
+        return "";
+        }
 }
 
 class Variable implements RuleArgument {
     private String name;
+
 
     Variable(String name) {
         this.name = name;
@@ -372,6 +438,9 @@ class Variable implements RuleArgument {
     }
     public boolean needsTemporaryVariableRule() {
         return true;
+    }
+    public String getName(){
+        return name;
     }
 }
 
@@ -408,6 +477,9 @@ class Atom implements Argument, RuleArgument {
       public   boolean needsTemporaryVariableRule() {
             return needsTemporaryVariable();
         }
+        public String getName() {
+        return name;
+    }
 }
 
 class IntegerArgument implements Argument, RuleArgument {
@@ -443,6 +515,9 @@ class IntegerArgument implements Argument, RuleArgument {
      public    boolean needsTemporaryVariableRule() {
             return needsTemporaryVariable();
         }
+            public String getName() {
+                return value.toString();
+                }
 }
 
 class FloatArgument extends TemporaryVariableArgument {
@@ -458,6 +533,10 @@ class FloatArgument extends TemporaryVariableArgument {
     public boolean needsTemporaryVariable() {
         return false;
     }
+        public String getName() {
+            return value.toString();
+            }
+
 }
 
 class Structure extends TemporaryVariableArgument {
@@ -467,6 +546,10 @@ class Structure extends TemporaryVariableArgument {
     Structure(String name, ArrayList<RuleArgument> arguments) {
         this.name = name;
         this.arguments = arguments;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String generateTemporaryVariable(int index, Registers registers) {
@@ -513,7 +596,35 @@ class Structure extends TemporaryVariableArgument {
         }
         return true;
     }
+
+    public String generateForRule(int count, HashMap<String, String> map, MutableInteger mut) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("    get_structure(").append(name).append("/").append(arguments.size()).append(",").append(count).append("),\n");
+        for (RuleArgument arg: arguments) {
+            if (arg instanceof Variable) {
+                map.put("x(" + mut.getValue() + ")", ((Variable) arg).getName());
+                mut.increment();
+            } else if (arg instanceof Structure) {
+                sb.append(((Structure) arg).generateForRule(count, map, mut));
+            } else {
+                sb.append(arg.generateForStructureRule(mut.getValue()));
+            }
+        }
+        return sb.toString();
+    }
+
+    public int getVariablesCount(int count) {
+        for (RuleArgument arg: arguments) {
+            if (arg instanceof Variable) {
+                count++;
+            } else if (arg instanceof Structure) {
+                count = ((Structure) arg).getVariablesCount(count);
+            }
+        }
+        return count;
+    }
 }
+
 class VariableStructure extends TemporaryVariableArgument {
     private String name;
     private ArrayList<RuleArgument> arguments = new ArrayList<RuleArgument>();
@@ -527,6 +638,7 @@ class VariableStructure extends TemporaryVariableArgument {
         return "";
     }
 }
+
 
 PARSER_END(Prolog)
 TOKEN : { < INTEGER : (["1"-"9"](["0"-"9"])+) | ["0"-"9"] > }

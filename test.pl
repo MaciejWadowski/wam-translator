@@ -35,7 +35,7 @@ kobieta(anna).
 mezczyzna(tomek).
 mezczyzna(robert).
 mezczyzna(jan).
-matka(kobieta(X),Y) :-
+matka(X,Y) :-
 	rodzic(X,Y),
 	kobieta(X).
 ojciec(X,Y) :-
@@ -53,12 +53,20 @@ testfun(A, B, C, D) :-
     przodek(C,D),
     przodek(B,C).
 testfun(a2,b3,c3,d3).
-testfun(owner(jacek, hamster(small, A)),parent(ania,B),C,D) :-
+testfun(owner(jacek, hamster(small, A)),parent(ania,B),wow(3.3),D) :-
     rodzic(A,B),
-    mezczyzna(C),
+    mezczyzna(D),
     kobieta(D).
-testfun(przodek(A,X),B,C,D) :-
+testfun(przodek(A,X),B,C,przodek(maciek,D)) :-
     rodzic(A,B),
     mezczyzna(C),
     kobieta(D),
-    kobieta(X).
+    kobieta(X),
+    mezczyzna(kobieta(przodek(maciek,D))).
+testfun(small,B,zzzz(A,mam(C,X),lol(2)),przodek(F,D)) :-
+    rodzic(A,B),
+    mezczyzna(C),
+    kobieta(D),
+    kobieta(X),
+    kobieta(F),
+    mezczyzna(C).
