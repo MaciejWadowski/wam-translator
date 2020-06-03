@@ -161,12 +161,12 @@ class PrologRule implements PredicateInstance {
             }
             count++;
         }
-
+        HashMap<String, String> unsafeVariablesMap = new HashMap<String, String>();
         for(int i = 0; i < literals.size(); i++) {
             if (i == literals.size()-1) {
-                sb.append(literals.get(i).generate(map, true));
+                sb.append(literals.get(i).generate(map,unsafeVariablesMap, true, varYCount));
             } else {
-                sb.append(literals.get(i).generate(map, false));
+                sb.append(literals.get(i).generate(map,unsafeVariablesMap, false, varYCount));
             }
         }
         return sb.toString();
@@ -248,11 +248,19 @@ class Literal {
         return "";
     }
 
-    public String generate(HashMap<String, String> map, boolean last) {
+    public String generate(HashMap<String, String> map, HashMap<String, String> unsafeMap, boolean last, MutableInteger y) {
         StringBuilder sb = new StringBuilder();
          for(int j = 0; j < instances.size(); j++) {
                 for (int i = 0; i < instances.get(j).getArguments().size(); i++) {
-                sb.append("    put_variable(").append(map.get(instances.get(j).getArguments().get(i).getName())).append(",").append(i).append("),\n");
+                    if (map.containsKey(instances.get(j).getArguments().get(i).getName())) {
+                        sb.append("    put_variable(").append(map.get(instances.get(j).getArguments().get(i).getName())).append(",").append(i).append("),\n");
+                    } else if (unsafeMap.containsKey(instances.get(j).getArguments().get(i).getName())) {
+                        sb.append("    put_unsafe_value(").append(unsafeMap.get(instances.get(j).getArguments().get(i).getName())).append(",").append(i).append("),\n");
+                    } else {
+                        unsafeMap.put(instances.get(j).getArguments().get(i).getName(),"y(" + y.getValue() + ")");
+                        sb.append("    put_variable(").append(unsafeMap.get(instances.get(j).getArguments().get(i).getName())).append(",").append(i).append("),\n");
+                        y.increment();
+                    }
              }
          }
          if (last) {
