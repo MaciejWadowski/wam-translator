@@ -155,7 +155,7 @@ class PrologRule implements PredicateInstance {
                     varYCount.increment();
                 }
             } else if (arg instanceof Structure) {
-                ((Structure) arg).generateForRule(count, map,varXCount);
+                sb.append(((Structure) arg).generateForRule(count, map,varXCount));
             } else {
                 sb.append(arg.generateForPredicateRule(count, null));
             }
@@ -610,9 +610,11 @@ class Structure extends TemporaryVariableArgument {
         sb.append("    get_structure(").append(name).append("/").append(arguments.size()).append(",").append(count).append("),\n");
         for (RuleArgument arg: arguments) {
             if (arg instanceof Variable) {
-                map.put("x(" + mut.getValue() + ")", ((Variable) arg).getName());
+                map.put( ((Variable) arg).getName(), "x(" + mut.getValue() + ")");
                 mut.increment();
+                sb.append("    unify_variable(").append(map.get(arg.getName())).append("),\n");
             } else if (arg instanceof Structure) {
+                sb.append("    unify_variable(x(0)),\n");
                 sb.append(((Structure) arg).generateForRule(count, map, mut));
             } else {
                 sb.append(arg.generateForStructureRule(mut.getValue()));
