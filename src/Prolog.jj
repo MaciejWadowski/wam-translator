@@ -3,7 +3,7 @@ options{
 }
 PARSER_BEGIN(Prolog)
 
-import java.util.ArrayList;
+import java.sql.Struct;import java.util.ArrayList;
 import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Set;
@@ -164,9 +164,9 @@ class PrologRule implements PredicateInstance {
         HashMap<String, String> unsafeVariablesMap = new HashMap<String, String>();
         for(int i = 0; i < literals.size(); i++) {
             if (i == literals.size()-1) {
-                sb.append(literals.get(i).generate(map,unsafeVariablesMap, true, varYCount));
+                sb.append(literals.get(i).generate(map,unsafeVariablesMap, true, varYCount, varXCount));
             } else {
-                sb.append(literals.get(i).generate(map,unsafeVariablesMap, false, varYCount));
+                sb.append(literals.get(i).generate(map,unsafeVariablesMap, false, varYCount, varXCount));
             }
         }
         return sb.toString();
@@ -248,11 +248,14 @@ class Literal {
         return "";
     }
 
-    public String generate(HashMap<String, String> map, HashMap<String, String> unsafeMap, boolean last, MutableInteger y) {
+    public String generate(HashMap<String, String> map, HashMap<String, String> unsafeMap, boolean last, MutableInteger y, MutableInteger x) {
         StringBuilder sb = new StringBuilder();
          for(int j = 0; j < instances.size(); j++) {
                 for (int i = 0; i < instances.get(j).getArguments().size(); i++) {
-                    if (map.containsKey(instances.get(j).getArguments().get(i).getName())) {
+                    if (instances.get(j).getArguments().get(i) instanceof Structure) {
+                        sb.append(((Structure) instances.get(j).getArguments().get(i)).generateStructureForLiteralArgument(map, unsafeMap,x, i));
+                    }
+                    else if (map.containsKey(instances.get(j).getArguments().get(i).getName())) {
                         sb.append("    put_variable(").append(map.get(instances.get(j).getArguments().get(i).getName())).append(",").append(i).append("),\n");
                     } else if (unsafeMap.containsKey(instances.get(j).getArguments().get(i).getName())) {
                         sb.append("    put_unsafe_value(").append(unsafeMap.get(instances.get(j).getArguments().get(i).getName())).append(",").append(i).append("),\n");
@@ -623,6 +626,28 @@ class Structure extends TemporaryVariableArgument {
         return sb.toString();
     }
 
+    public String generateStructureForLiteralArgument(HashMap<String, String> map, HashMap<String, String> unsafeMap, MutableInteger x, int varPosition) {
+        int i = 0;
+        StringBuilder sb = new StringBuilder();
+        for(RuleArgument arg: arguments) {
+            if (arg instanceof Structure) {
+                sb.append(((Structure) arg).generateStructureForLiteralArgument(map, unsafeMap, x, i));
+            }
+            i++;
+        }
+        sb.append("    put_structure(").append(getName()).append("/").append(arguments.size()).append(",").append(varPosition).append("),\n");
+        for (RuleArgument arg: arguments) {
+            if (!(arg instanceof Structure)) {
+                if (arg instanceof Variable) {
+                        sb.append("    unify_value(").append(map.get(arg.getName())).append("),\n");
+                } else {
+                    sb.append(arg.generateForStructureRule(0));
+                }
+            }
+        }
+        return sb.toString();
+    }
+
     public int getVariablesCount(int count) {
         for (RuleArgument arg: arguments) {
             if (arg instanceof Variable) {
@@ -648,6 +673,7 @@ class VariableStructure extends TemporaryVariableArgument {
         return "";
     }
 }
+
 
 
 PARSER_END(Prolog)

@@ -68,5 +68,5 @@ testfun(small,B,zzzz(A,mam(C,X),lol(2)),przodek(F,D)) :-
     mezczyzna(C),
     kobieta(D),
     kobieta(X),
-    kobieta(F),
-    mezczyzna(C).
+    kobieta(maciek(zenon(A))),
+    mezczyzna(lol(1,2)).
